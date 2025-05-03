@@ -1,0 +1,10 @@
+streamlit
+scikit-learn
+tensorflow
+keras
+joblib
+nltk
+pandas
+numpy
+pyngrok
+gdown
