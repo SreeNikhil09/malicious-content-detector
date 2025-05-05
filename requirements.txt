@@ -9,3 +9,4 @@ numpy
 pyngrok
 gdown
 requests
+tldextract
