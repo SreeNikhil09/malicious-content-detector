@@ -1,76 +1,87 @@
 import streamlit as st
 import pickle
+import requests
+import io
 import joblib
-import gdown
-import os
-import tensorflow as tf
-from tensorflow.keras.models import load_model
 import numpy as np
+import re
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# Download malicious_url_model.pkl from Google Drive if not present
-url_model_id = '1TUWuxkGtJD8kSEI9wP4UJxI_RXpt4bmh'
-url_model_path = 'malicious_url_model.pkl'
+st.set_page_config(page_title="Malicious Content Detector", layout="centered")
 
-if not os.path.exists(url_model_path):
-    gdown.download(f"https://drive.google.com/uc?id={url_model_id}", url_model_path, quiet=False)
+# ========== Load Files from GitHub ==========
+@st.cache_resource
+def load_pickle_from_github(url):
+    response = requests.get(url)
+    return pickle.load(io.BytesIO(response.content))
 
-# Load models and vectorizers
-with open('tfidf_vectorizer.pkl', 'rb') as f:
-    tfidf_vectorizer = pickle.load(f)
+@st.cache_resource
+def load_model_from_github(url, filename="temp_model.h5"):
+    response = requests.get(url)
+    with open(filename, "wb") as f:
+        f.write(response.content)
+    return load_model(filename)
 
-with open('email_spam_model.pkl', 'rb') as f:
-    email_model = pickle.load(f)
+# Base URL of your raw GitHub files
+base_url = "https://raw.githubusercontent.com/SreeNikhil09/malicious-content-detector/main/"
 
-with open('feature_columns.pkl', 'rb') as f:
-    feature_columns = pickle.load(f)
+# Load models
+url_model = load_pickle_from_github(base_url + "malicious_url_model.pkl")
+email_model = load_pickle_from_github(base_url + "email_spam_model.pkl")
+vectorizer = load_pickle_from_github(base_url + "tfidf_vectorizer.pkl")
+sms_model = load_model_from_github(base_url + "sms_spam_model.h5")
+sms_tokenizer = load_pickle_from_github(base_url + "sms_tokenizer.pkl")
 
-sms_model = load_model('sms_spam_model.h5')
+# ========== UI ==========
+st.title("🚨 Malicious Content Detection System")
 
-with open('sms_tokenizer.pkl', 'rb') as f:
-    sms_tokenizer = pickle.load(f)
+tab1, tab2, tab3 = st.tabs(["📧 Email Detection", "🔗 URL Detection", "📱 SMS Detection"])
 
-with open('malicious_url_model.pkl', 'rb') as f:
-    url_model = pickle.load(f)
-
-# Streamlit App UI
-st.title("Multi-Modal Threat Detection System")
-tab1, tab2, tab3 = st.tabs(["Email Spam", "Malicious URL", "SMS Spam"])
-
+# --------- Email Detection ----------
 with tab1:
-    st.subheader("Email Spam Detection")
-    user_input = st.text_area("Enter Email Text")
+    st.subheader("Detect if an Email is Spam")
+    email_input = st.text_area("Enter Email Content:")
     if st.button("Check Email"):
-        if user_input.strip():
-            vec_input = tfidf_vectorizer.transform([user_input])
-            result = email_model.predict(vec_input)[0]
-            st.success("Spam Email Detected!" if result == 1 else "Not Spam.")
+        if email_input.strip() == "":
+            st.warning("Please enter an email.")
         else:
-            st.warning("Please enter text.")
+            transformed = vectorizer.transform([email_input])
+            prediction = email_model.predict(transformed)[0]
+            st.success("Result: SPAM ❌" if prediction == 1 else "Result: HAM ✅")
 
+# --------- URL Detection ----------
 with tab2:
-    st.subheader("Malicious URL Detection")
-    url_input = st.text_input("Enter URL")
+    st.subheader("Check if a URL is Malicious")
+    url_input = st.text_input("Enter the URL:")
     if st.button("Check URL"):
-        if url_input.strip():
-            # Create features based on your dataset’s columns
-            import pandas as pd
-            input_df = pd.DataFrame([[url_input]], columns=['url'])
-            input_df = input_df.reindex(columns=feature_columns, fill_value=0)
-            result = url_model.predict(input_df)[0]
-            st.success("Malicious URL!" if result == 1 else "Safe URL.")
-        else:
+        if url_input.strip() == "":
             st.warning("Please enter a URL.")
-
-with tab3:
-    st.subheader("SMS Spam Detection")
-    sms_input = st.text_area("Enter SMS Text")
-    if st.button("Check SMS"):
-        if sms_input.strip():
-            sequence = sms_tokenizer.texts_to_sequences([sms_input])
-            padded = tf.keras.preprocessing.sequence.pad_sequences(sequence, maxlen=100)
-            result = sms_model.predict(padded)[0][0]
-            st.success("Spam SMS!" if result > 0.5 else "Not Spam.")
         else:
-            st.warning("Please enter SMS text.")
+            # Feature extraction (based on your model)
+            def extract_features(url):
+                return np.array([
+                    len(url),
+                    url.count('.'),
+                    url.count('/'),
+                    int(bool(re.search(r'\d', url))),  # Has numbers
+                    int("https" in url),
+                    int("@" in url)
+                ]).reshape(1, -1)
 
-st.sidebar.markdown("Developed as a Final Year Project")
+            features = extract_features(url_input)
+            prediction = url_model.predict(features)[0]
+            st.success("Result: MALICIOUS ❌" if prediction == 1 else "Result: SAFE ✅")
+
+# --------- SMS Detection ----------
+with tab3:
+    st.subheader("Detect if an SMS is Spam")
+    sms_input = st.text_area("Enter SMS Content:")
+    if st.button("Check SMS"):
+        if sms_input.strip() == "":
+            st.warning("Please enter an SMS message.")
+        else:
+            sequences = sms_tokenizer.texts_to_sequences([sms_input])
+            padded = pad_sequences(sequences, maxlen=100)
+            prediction = sms_model.predict(padded)[0][0]
+            st.success("Result: SPAM ❌" if prediction > 0.5 else "Result: HAM ✅")
