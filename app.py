@@ -74,10 +74,16 @@ with tabs[1]:
                     'count_letters': sum(c.isalpha() for c in url),
                 }
 
-            input_df = pd.DataFrame([extract_features(url_input)], columns=feature_columns)
-            prediction = url_model.predict(input_df)[0]
-            result = "Malicious" if prediction == 1 else "Safe"
-            st.success(f"Prediction: {result}")
+            features = extract_features(url_input)
+            # Ensure correct column order
+            input_df = pd.DataFrame([[features[col] for col in feature_columns]], columns=feature_columns)
+
+            try:
+                prediction = url_model.predict(input_df)[0]
+                result = "Malicious" if prediction == 1 else "Safe"
+                st.success(f"Prediction: {result}")
+            except Exception as e:
+                st.error(f"Prediction Error: {e}")
         else:
             st.warning("Please enter a URL.")
 
