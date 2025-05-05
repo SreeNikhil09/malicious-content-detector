@@ -14,7 +14,7 @@ st.set_page_config(page_title="Malicious Content Detector", layout="centered")
 @st.cache_resource
 def load_pickle_from_github(url):
     response = requests.get(url)
-    return pickle.load(io.BytesIO(response.content))
+    return joblib.load(io.BytesIO(response.content))
 
 @st.cache_resource
 def load_model_from_github(url, filename="temp_model.h5"):
@@ -27,11 +27,11 @@ def load_model_from_github(url, filename="temp_model.h5"):
 base_url = "https://raw.githubusercontent.com/SreeNikhil09/malicious-content-detector/main/"
 
 # Load models
-url_model = load_pickle_from_github(base_url + "malicious_url_model.pkl")
-email_model = load_pickle_from_github(base_url + "email_spam_model.pkl")
-vectorizer = load_pickle_from_github(base_url + "tfidf_vectorizer.pkl")
+url_model = load_joblib_from_github(base_url + "malicious_url_model.pkl")
+email_model = load_joblib_from_github(base_url + "email_spam_model.pkl")
+vectorizer = load_joblib_from_github(base_url + "tfidf_vectorizer.pkl")
 sms_model = load_model_from_github(base_url + "sms_spam_model.h5")
-sms_tokenizer = load_pickle_from_github(base_url + "sms_tokenizer.pkl")
+sms_tokenizer = load_joblib_from_github(base_url + "sms_tokenizer.pkl")
 
 # ========== UI ==========
 st.title("🚨 Malicious Content Detection System")
