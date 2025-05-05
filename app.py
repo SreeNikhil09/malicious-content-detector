@@ -52,33 +52,42 @@ with tabs[0]:
 with tabs[1]:
     st.header("Malicious URL Detection")
     url_input = st.text_input("Enter URL")
+
+    def extract_features_from_url(url, feature_columns):
+        import re
+        import tldextract
+        import pandas as pd
+
+        features = {}
+        features['url_length'] = len(url)
+        features['num_dots'] = url.count('.')
+        features['num_hyphens'] = url.count('-')
+        features['has_https'] = int('https' in url)
+        features['has_ip'] = int(bool(re.search(r'\d+\.\d+\.\d+\.\d+', url)))
+
+        extracted = tldextract.extract(url)
+        features['domain_length'] = len(extracted.domain)
+        suffix = extracted.suffix
+
+        df = pd.DataFrame([features])
+
+        # One-hot encode suffix
+        for col in feature_columns:
+            if col.startswith("suffix_"):
+                df[col] = 1 if f"suffix_{suffix}" == col else 0
+
+        # Ensure all feature columns are present
+        for col in feature_columns:
+            if col not in df.columns:
+                df[col] = 0
+
+        df = df[feature_columns]
+        return df
+
     if st.button("Detect URL"):
         if url_input.strip():
-            import pandas as pd
-            from urllib.parse import urlparse
-
-            def extract_features(url):
-                return {
-                    'url_length': len(url),
-                    'hostname_length': len(urlparse(url).hostname or ''),
-                    'path_length': len(urlparse(url).path),
-                    'count_@': url.count('@'),
-                    'count_-': url.count('-'),
-                    'count_?': url.count('?'),
-                    'count_=': url.count('='),
-                    'count_.': url.count('.'),
-                    'count_http': url.count('http'),
-                    'count_https': url.count('https'),
-                    'count_www': url.count('www'),
-                    'count_digits': sum(c.isdigit() for c in url),
-                    'count_letters': sum(c.isalpha() for c in url),
-                }
-
-            features = extract_features(url_input)
-            # Ensure correct column order
-            input_df = pd.DataFrame([[features[col] for col in feature_columns]], columns=feature_columns)
-
             try:
+                input_df = extract_features_from_url(url_input, feature_columns)
                 prediction = url_model.predict(input_df)[0]
                 result = "Malicious" if prediction == 1 else "Safe"
                 st.success(f"Prediction: {result}")
