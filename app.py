@@ -34,6 +34,17 @@ st.set_page_config(page_title="Malicious Content Detector", layout="centered")
 st.title("Malicious Content Detection App")
 
 tabs = st.tabs(["Malicious Email", "Malicious URL", "Malicious SMS"])
+def display_awareness(points):
+    st.markdown(
+        f"""
+        <div style='background-color: #f0f0f0; padding: 10px; border-radius: 8px;'>
+        <h5 style='color: black;'>🛡️ Awareness Tips:</h5>
+        <ul style='color: black;'>
+        {''.join([f"<li>{point}</li>" for point in points])}
+        </ul>
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 # --- Email Tab ---
 with tabs[0]:
@@ -47,6 +58,16 @@ with tabs[0]:
             st.success(f"Prediction: {result}")
         else:
             st.warning("Please enter some text.")
+    email_tips = [
+        "Look for spelling and grammar errors.",
+        "Beware of urgent or threatening language.",
+        "Avoid clicking links from unknown senders.",
+        "Check the sender’s email address carefully.",
+        "Never download unexpected attachments.",
+        "Legitimate companies don’t ask for passwords via email.",
+        "Verify suspicious emails directly with the company."
+    ]
+    display_awareness(email_tips)
 
 # --- URL Tab ---
 with tabs[1]:
