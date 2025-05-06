@@ -38,6 +38,11 @@ tabs = st.tabs(["Malicious Email", "Malicious URL", "Malicious SMS"])
 # --- Email Tab ---
 with tabs[0]:
     st.header("Email Spam Detection")
+    st.markdown("""
+    <div style='background-color:#f9f9f9; padding:10px; border-radius:10px; border-left:5px solid #ff4b4b;'>
+        <b>🛡️ Awareness Tip:</b> Avoid emails with urgent subject lines, unknown attachments, or requests for personal info.
+    </div>
+    """, unsafe_allow_html=True)
     email_input = st.text_area("Enter Email Text")
     if st.button("Detect Email"):
         if email_input.strip():
