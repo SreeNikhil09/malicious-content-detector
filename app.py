@@ -47,11 +47,6 @@ with tabs[0]:
             st.success(f"Prediction: {result}")
         else:
             st.warning("Please enter some text.")
-    st.markdown("""
-    <div style='background-color:#f9f9f9; padding:10px; border-radius:10px; border-left:5px solid #ff4b4b;'>
-        <b>🛡️ Awareness Tip:</b> Avoid emails with urgent subject lines, unknown attachments, or requests for personal info.
-    </div>
-    """, unsafe_allow_html=True)
 
 # --- URL Tab ---
 with tabs[1]:
