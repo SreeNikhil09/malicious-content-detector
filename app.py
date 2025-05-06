@@ -116,6 +116,16 @@ with tabs[1]:
                 st.error(f"Prediction Error: {e}")
         else:
             st.warning("Please enter a URL.")
+    url_tips = [
+        "Hover over links to preview the destination.",
+        "Avoid shortened URLs unless trusted.",
+        "Check for extra characters or numbers in the domain.",
+        "Don’t trust HTTPS alone — it doesn’t mean the site is safe.",
+        "Avoid sites with many pop-ups or redirects.",
+        "Verify unfamiliar domains before clicking.",
+        "Look for trusted security badges or certificates."
+    ]
+    display_awareness(url_tips)
 
 # --- SMS Tab ---
 with tabs[2]:
@@ -130,3 +140,13 @@ with tabs[2]:
             st.success(f"Prediction: {result}")
         else:
             st.warning("Please enter an SMS message.")
+    sms_tips = [
+        "Do not respond to unknown numbers.",
+        "Avoid clicking on links in unsolicited messages.",
+        "Legitimate companies rarely send links without context.",
+        "Beware of messages asking for urgent action.",
+        "Do not share OTPs or passwords via SMS.",
+        "Check for misspellings and strange language.",
+        "Block and report spam numbers."
+    ]
+    display_awareness(sms_tips)
